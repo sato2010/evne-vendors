@@ -12,10 +12,11 @@ class Vendor{
 
     private $capabilities;
     private $roles = [];
+    private $properties = array();
 
     public function __construct()
     {
-
+        $this->add_new_roles();
     }
 
     private function getRoles(){
@@ -89,6 +90,7 @@ class Vendor{
 
     public function saveParam($post){
 
+        $this->getCapabilities();
         $newCap = [];
         $role = '';
         foreach ($this->capabilities as $index => $cap){
@@ -104,19 +106,16 @@ class Vendor{
             );
             $role = get_role( $post['new_name'] );
         }
-
-        if(isset($post['exist_name']) && !empty($post['exist_name'])){
+        else
+        if( isset($post['exist_name']) && !empty($post['exist_name']) ){
             $role = get_role( strtolower($post['exist_name']) );
             foreach ($this->capabilities as $index => $cap) {
-                var_dump($cap);
-                $role->add_cap($cap, false);
+                $role->remove_cap($cap);
             }
         }
 
-        //var_dump($post, $role);die();
         if(isset($post['cap']) && ($role)){
             foreach ($post['cap'] as $cup => $on) {
-                var_dump($cup);
                 $role->add_cap($cup, true);
             }
         }
@@ -138,67 +137,114 @@ class Vendor{
         if(isset($_GET['name'])) {
             $existCap = $this->getExistCapabilities($_GET['name']);
         }
-//var_dump($this->roles);
+
         ?>
-        <div class='wrap'>
-            <h2>Add new role</h2>
+        <script>
+            function openTab(evt, tabName) {
+
+                jQuery('.exist-roles').val('');
+
+                jQuery('input[type="checkbox"]').each(
+                    function (i,v) {
+                        jQuery(v).prop('checked', false);
+                    }
+                );
+                // Declare all variables
+                var i, tabcontent, tablinks;
+
+                // Get all elements with class="tabcontent" and hide them
+                tabcontent = document.getElementsByClassName("evne-tabcontent");
+                for (i = 0; i < tabcontent.length; i++) {
+                    tabcontent[i].style.display = "none";
+                }
+
+                // Get all elements with class="tablinks" and remove the class "active"
+                tablinks = document.getElementsByClassName("tablinks");
+                for (i = 0; i < tablinks.length; i++) {
+                    tablinks[i].className = tablinks[i].className.replace(" active", "");
+                }
+
+                // Show the current tab, and add an "active" class to the button that opened the tab
+                document.getElementById(tabName).style.display = "block";
+                evt.currentTarget.className += " active";
+            }
+
+
+        </script>
+        <div class='info-container'>
+            <h2>Roles and capabilities</h2>
             <div class="main-content">
 
                 <form class="form-basic" method="post" action="">
+                    <input type="hidden" value="t1">
+                    <div class="evne-tab">
+                        <a class="tablinks active" onclick="openTab(event, 't1')">Add new role</a>
+                        <a class="tablinks" onclick="openTab(event, 't2')">Edit role</a>
+                        <a class="tablinks" onclick="openTab(event, 't3')">Edit user (comming soon)</a>
+                    </div>
+                    <div id="t1" class="evne-tabcontent active">
+                        <div class="form-title-row">
+                            <h1>Add new role</h1>
+                        </div>
+                        <div class="form-row">
+                            <label>
+                                <span>Role name</span>
+                                <input type="text" name="new_name" id="new_name">
+                            </label>
+                        </div>
+                    </div>
 
-                    <div class="form-title-row">
-                        <h1>Add new role</h1>
-                    </div>
-                    <div class="form-row">
-                        <button type="submit" class="button button-primary button-large">Submit Form</button>
-                    </div>
-                    <br/>
-                    <div class="form-row">
-                        <label>
-                            <span>Role name</span>
-                            <input type="text" name="new_name" id="new_name">
-                        </label>
-                    </div>
 
-                    <div class="form-title-row">
-                        <h1>Edit role</h1>
+                    <div id="t2" class="evne-tabcontent">
+                        <div class="form-title-row">
+                            <h1>Edit role</h1>
+                        </div>
+                        <select class="exist-roles" name="exist_name">
+                            <?php if(isset($_GET['name'])): ?>
+                                <option><?= $_GET['name'] ?></option>
+                                <option></option>
+                                <?php foreach ($this->roles as $index => $role): ?>
+                                    <option><?= $role ?></option>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <option></option>
+                                <?php foreach ($this->roles as $index => $role): ?>
+                                    <option><?= $role ?></option>
+                                <?php endforeach; ?>
+                            <?php endif;?>
+                        </select>
                     </div>
-                    <select class="exist-roles" name="exist_name">
-                        <?php if(isset($_GET['name'])): ?>
-                            <option><?= $_GET['name'] ?></option>
-                            <option></option>
-                            <?php foreach ($this->roles as $index => $role): ?>
-                                <option><?= $role ?></option>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <option></option>
-                            <?php foreach ($this->roles as $index => $role): ?>
-                                <option><?= $role ?></option>
-                            <?php endforeach; ?>
-                        <?php endif;?>
-                    </select>
-
 
                     <div class="row">
-
+                        <?php $divider = round(count($this->capabilities) / 2); ?>
                         <?php foreach ($this->capabilities as $index => $cap): ?>
-                            <?php $checked = in_array($cap, $existCap) ? 'checked' : '' ; ?>
-                            <div class="col-6">
-                                <label>
-                                    <input type="checkbox" name="cap[<?= $cap ?>]" <?= $checked ?> >
-                                    <span><?= $cap ?></span>
-                                </label>
-                            </div>
+                            <?php if($index%$divider == 0): ?>
+                                <div class="main-col">
+                            <?php endif; ?>
+                                <?php $checked = in_array($cap, $existCap) ? 'checked' : '' ; ?>
+                                <div class="col-6">
+                                    <span><?php echo ($index + 1) ?></span>
+                                    <label>
+                                        <input type="checkbox" name="cap[<?= $cap ?>]" <?= $checked ?> >
+                                        <span><?= $cap ?></span>
+                                    </label>
+                                </div>
+                            <?php if(($index + 1)%$divider == 0): ?>
+                                </div>
+                            <?php endif; ?>
                         <?php endforeach; ?>
+                        <?php if($index != count($this->capabilities)): ?>
+                            <?php //echo '</div>'; ?>
+                        <?php endif; ?>
                     </div>
 
 
-                    <div class="form-row">
-                        <button type="submit">Submit Form</button>
-                    </div>
+
 
                 </form>
-
+                <div class="form-row">
+                    <button type="submit" class="button button-primary button-large">save</button>
+                </div>
             </div>
 
         </div>
@@ -215,7 +261,7 @@ class Vendor{
     }
 
     public function assetRegister(){
-        wp_enqueue_style( 'evne-vendor-style', plugin_dir_url( __FILE__ ) . '/assets/style.css', array( 'evne-style' ) );
+        wp_enqueue_style( 'evne-vendor-style', plugin_dir_url( __FILE__ ) . '/assets/css/style.css' );
         wp_enqueue_script( 'evne-vendor-main',  plugin_dir_url( __FILE__ ) . '/assets/js/main.js', array('jquery'),'', true );
     }
 
