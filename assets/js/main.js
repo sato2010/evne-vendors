@@ -7,3 +7,10 @@ jQuery('.exist-roles').on('change', function(e){
     location.replace(loc);
 });
 
+jQuery('.exist-users').on('change', function(e){
+    console.log(jQuery(this).val());
+    var loc = window.location;
+    loc = loc + '&user_id=' + jQuery(this).val();
+    location.replace(loc);
+});
+
